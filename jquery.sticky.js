@@ -36,9 +36,13 @@
 
         if (scrollTop <= etse) {
           if (s.currentTop !== null) {
-            s.stickyElement
+            s.stickyWrapper.css('height', '');
+            s.stickyElement.removeClass('is-sticky')
               .css('position', '')
               .css('top', '');
+            if (typeof s.getWidthFrom !== 'undefined') {
+              s.stickyElement.css('width', '');
+            }
             s.stickyElement.parent().removeClass(s.className);
             s.currentTop = null;
           }
@@ -52,7 +56,8 @@
             newTop = s.topSpacing;
           }
           if (s.currentTop != newTop) {
-            s.stickyElement
+            s.stickyWrapper.css('height', s.stickyElement.outerHeight());
+            s.stickyElement.addClass('is-sticky')
               .css('position', 'fixed')
               .css('top', newTop);
 
@@ -68,6 +73,15 @@
     },
     resizer = function() {
       windowHeight = $window.height();
+      for (var i = 0; i < sticked.length; i++) {
+        var s = sticked[i];
+        if(s.stickyElement.hasClass('is-sticky')) {
+          s.stickyWrapper.css('height', s.stickyElement.outerHeight());
+          if (typeof s.getWidthFrom !== 'undefined') {
+            s.stickyElement.css('width', $(s.getWidthFrom).width());
+          }
+        }
+      }
     },
     methods = {
       init: function(options) {
@@ -89,40 +103,18 @@
             stickyElement.css({"float":"none"}).parent().css({"float":"right"});
           }
 
-          var stickyWrapper = stickyElement.parent();
-          stickyWrapper.css('height', stickyElement.outerHeight());
           sticked.push({
             topSpacing: o.topSpacing,
             bottomSpacing: o.bottomSpacing,
             stickyElement: stickyElement,
             currentTop: null,
-            stickyWrapper: stickyWrapper,
+            stickyWrapper: stickyElement.parent(),
             className: o.className,
             getWidthFrom: o.getWidthFrom
           });
         });
       },
-      update: scroller,
-      unstick: function(options) {
-        return this.each(function() {
-          var unstickyElement = $(this);
-
-          removeIdx = -1;
-          for (var i = 0; i < sticked.length; i++) 
-          {
-            if (sticked[i].stickyElement.get(0) == unstickyElement.get(0))
-            {
-                removeIdx = i;
-            }
-          }
-          if(removeIdx != -1)
-          {
-            sticked.splice(removeIdx,1);
-            unstickyElement.unwrap();
-            unstickyElement.removeAttr('style');
-          }
-        });
-      }
+      update: scroller
     };
 
   // should be more efficient than using $window.scroll(scroller) and $window.resize(resizer):
@@ -142,17 +134,6 @@
     } else {
       $.error('Method ' + method + ' does not exist on jQuery.sticky');
     }
-  };
-
-  $.fn.unstick = function(method) {
-    if (methods[method]) {
-      return methods[method].apply(this, Array.prototype.slice.call(arguments, 1));
-    } else if (typeof method === 'object' || !method ) {
-      return methods.unstick.apply( this, arguments );
-    } else {
-      $.error('Method ' + method + ' does not exist on jQuery.sticky');
-    }
-
   };
   $(function() {
     setTimeout(scroller, 0);
